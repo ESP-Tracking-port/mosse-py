@@ -189,8 +189,20 @@ class MOSSE:
         self.Bi = self.learning_rate * F * np.conjugate(F) + (1 - self.learning_rate) * self.Bi
 
     def psr(self,g):
+        """
+        PSR can be used as a tracking quality metric enabling use of
+        threshold-based tracking failure detection.
+
+        PSR is calculated as $\over {max_response - mean} {stdev}$
+
+        When calculating mean and std. dev., a 11x11 window should be excluded
+        from the response (according to the MOSSE paper)
+        """
+        # Get max response
         g_max = np.max(g)
         x, y, w, h = self.roi
+
+        # Exclude 11x11 window
         center_x = x + w//2
         center_y = y + h//2
         mask = np.ones(g.shape,dtype=np.bool)
@@ -198,7 +210,9 @@ class MOSSE:
         g = g.flatten()
         mask = mask.flatten()
         sidelobe = g[mask]
-        mn = np.mean(sidelobe)
-        sd = np.std(sidelobe)
-        psr = (g_max-mn)/sd
+
+        # Calculate the statistics
+        mn = np.mean(sidelobe)  # Mean
+        sd = np.std(sidelobe)  # Standard deviation
+        psr = (g_max-mn)/sd  # Calculate the PSR
         return psr
